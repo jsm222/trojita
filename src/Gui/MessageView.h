@@ -37,7 +37,7 @@ class QSettings;
 class QStackedLayout;
 class QTimer;
 class QUrl;
-class QWebView;
+class QWebEngineView;
 
 namespace Cryptography {
 class MessageModel;
@@ -104,7 +104,7 @@ private slots:
     void newLabelAction(const QString &tag);
     void deleteLabelAction(const QString &tag);
     void partContextMenuRequested(const QPoint &point);
-    void partLinkHovered(const QString &link, const QString &title, const QString &textContent);
+    void partLinkHovered(const QString &link);
     void triggerSearchDialog();
     void onWebViewLoadStarted();
     void onWebViewLoadFinished();
@@ -124,7 +124,7 @@ private:
     void clearWaitingConns();
 
     QStackedLayout *m_stack;
-    QWebView *m_homePage;
+    QWebEngineView *m_homePage;
 
     QWidget *m_messageWidget;
     QBoxLayout *m_msgLayout;
@@ -143,7 +143,7 @@ private:
     Spinner *m_loadingSpinner;
     QSettings *m_settings;
     Plugins::PluginManager *m_pluginManager;
-    QSet<QWebView*> m_loadingItems;
+    QSet<QWebEngineView*> m_loadingItems;
 
     std::vector<QMetaObject::Connection> m_waitingMessageConns;
 

@@ -30,7 +30,7 @@
 
 #include <QPointer>
 #include <QWidget>
-
+#include <QtWebEngineWidgets/QWebEngineView>
 class QCheckBox;
 class QLineEdit;
 class QString;
@@ -51,7 +51,7 @@ public:
     bool highlightAllState() const;
 
     void setVisible(bool visible);
-    void setAssociatedWebView(QWebView *webView);
+    void setAssociatedWebView(QWebEngineView *webView);
 
 protected:
     void keyPressEvent(QKeyEvent *event);
@@ -76,7 +76,7 @@ private:
     QCheckBox *m_highlightAll;
 
     QString _lastStringSearched;
-    QPointer<QWebView> m_associatedWebView;
+    QPointer<QWebEngineView> m_associatedWebView;
 };
 
 }

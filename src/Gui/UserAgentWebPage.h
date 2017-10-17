@@ -22,14 +22,13 @@
 #ifndef GUI_USERAGENT_WEBPAGE_H
 #define GUI_USERAGENT_WEBPAGE_H
 
-#include <QWebPage>
-
+#include <QtWebEngineWidgets/QWebEngineView>
 namespace Gui
 {
 
 
 /** @short QWebPage which sends proper User-Agent headers */
-class UserAgentWebPage: public QWebPage
+class UserAgentWebPage: public QWebEnginePage
 {
     Q_OBJECT
 public:

@@ -39,11 +39,11 @@ MessageSourceWidget::MessageSourceWidget(QWidget *parent, const QModelIndex &mes
     , FindBarMixin(this)
     , m_combiner(nullptr)
     , m_loadingSpinner(nullptr)
-    , m_widget(new QWebView(this))
+    , m_widget(new QWebEngineView(this))
 {
     setWindowIcon(UiUtils::loadIcon(QStringLiteral("text-x-hex")));
     Q_ASSERT(messageIndex.isValid());
-    m_widget->page()->setNetworkAccessManager(0);
+    //m_widget->page()->setNetworkAccessManager(0);
 
     m_loadingSpinner = new Spinner(this);
     m_loadingSpinner->setText(tr("Fetching\nMessage"));

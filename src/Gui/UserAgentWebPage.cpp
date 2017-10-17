@@ -26,7 +26,7 @@
 namespace Gui
 {
 
-UserAgentWebPage::UserAgentWebPage(QWidget *parent): QWebPage(parent)
+UserAgentWebPage::UserAgentWebPage(QWidget *parent): QWebEnginePage(parent)
 {
 }
 

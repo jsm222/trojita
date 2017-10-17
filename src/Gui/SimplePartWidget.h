@@ -28,7 +28,8 @@
 #include <QPersistentModelIndex>
 #include "EmbeddedWebView.h"
 #include "UiUtils/PlainTextFormatter.h"
-
+#include <QtWebEngineWidgets/QWebEngineView>
+#include <QtWebEngineWidgets/QWebEngineSettings>
 class QModelIndex;
 class QNetworkReply;
 
@@ -71,7 +72,7 @@ private slots:
     void slotDownloadImage(const QNetworkRequest &req);
 protected:
 signals:
-    void linkHovered(const QString &link, const QString &title, const QString &textContent);
+    void linkHovered(const QString &link);
     void searchDialogRequested();
 private:
     QPersistentModelIndex m_partIndex;

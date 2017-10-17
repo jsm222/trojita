@@ -88,8 +88,8 @@ MessageView::MessageView(QWidget *parent, QSettings *settings, Plugins::PluginMa
 
 
     // The homepage widget -- our poor man's splashscreen
-    m_homePage = new EmbeddedWebView(this, new QNetworkAccessManager(this));
-    m_homePage->setFixedSize(450,300);
+    m_homePage = new EmbeddedWebView(this);
+    m_homePage->setFixedSize(850,600);
     CALL_LATER_NOARG(m_homePage, handlePageLoadFinished);
     m_homePage->setPage(new UserAgentWebPage(m_homePage));
     m_homePage->installEventFilter(this);
@@ -471,10 +471,9 @@ void MessageView::partContextMenuRequested(const QPoint &point)
     }
 }
 
-void MessageView::partLinkHovered(const QString &link, const QString &title, const QString &textContent)
+void MessageView::partLinkHovered(const QString &link)
 {
-    Q_UNUSED(title);
-    Q_UNUSED(textContent);
+
     emit linkHovered(link);
 }
 
@@ -490,7 +489,7 @@ QModelIndex MessageView::currentMessage() const
 
 void MessageView::onWebViewLoadStarted()
 {
-    QWebView *wv = qobject_cast<QWebView*>(sender());
+    QWebEngineView *wv = qobject_cast<QWebEngineView*>(sender());
     Q_ASSERT(wv);
 
     if (m_netWatcher && m_netWatcher->effectiveNetworkPolicy() != Imap::Mailbox::NETWORK_OFFLINE) {
@@ -501,7 +500,7 @@ void MessageView::onWebViewLoadStarted()
 
 void MessageView::onWebViewLoadFinished()
 {
-    QWebView *wv = qobject_cast<QWebView*>(sender());
+    QWebEngineView *wv = qobject_cast<QWebEngineView*>(sender());
     Q_ASSERT(wv);
     m_loadingItems.remove(wv);
     if (m_loadingItems.isEmpty())

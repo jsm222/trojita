@@ -46,31 +46,38 @@ namespace Gui
 
 SimplePartWidget::SimplePartWidget(QWidget *parent, Imap::Network::MsgPartNetAccessManager *manager,
                                    const QModelIndex &partIndex, MessageView *messageView):
-    EmbeddedWebView(parent, manager), m_partIndex(partIndex), m_messageView(messageView), m_netAccessManager(manager)
+    EmbeddedWebView(parent), m_partIndex(partIndex), m_messageView(messageView), m_netAccessManager(manager)
 {
     Q_ASSERT(partIndex.isValid());
 
     if (m_messageView) {
-        connect(this, &QWebView::loadStarted, m_messageView, &MessageView::onWebViewLoadStarted);
-        connect(this, &QWebView::loadFinished, m_messageView, &MessageView::onWebViewLoadFinished);
+        connect(this, &QWebEngineView::loadStarted, m_messageView, &MessageView::onWebViewLoadStarted);
+        connect(this, &QWebEngineView::loadFinished, m_messageView, &MessageView::onWebViewLoadFinished);
     }
 
     QUrl url;
     url.setScheme(QStringLiteral("trojita-imap"));
     url.setHost(QStringLiteral("msg"));
     url.setPath(partIndex.data(Imap::Mailbox::RolePartPathToPart).toString());
+
+
     if (partIndex.data(Imap::Mailbox::RolePartMimeType).toString() == QLatin1String("text/plain")) {
-        if (partIndex.data(Imap::Mailbox::RolePartOctets).toULongLong() < 100 * 1024) {
-            connect(this, &QWebView::loadFinished, this, &SimplePartWidget::slotMarkupPlainText);
+           if (partIndex.data(Imap::Mailbox::RolePartOctets).toULongLong() < 100 * 1024) {
+
+            connect(manager, &QNetworkAccessManager::finished, this, &SimplePartWidget::slotMarkupPlainText);
         } else {
-            QFont font(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-            setStaticWidth(QFontMetrics(font).maxWidth()*90);
-            addCustomStylesheet(QStringLiteral("pre{word-wrap:normal !important;white-space:pre !important;}"));
-            QWebSettings *s = settings();
-            s->setFontFamily(QWebSettings::StandardFont, font.family());
+
         }
+    } else if (partIndex.data(Imap::Mailbox::RolePartMimeType).toString() == QLatin1String("text/html")) {
+        connect(manager, &QNetworkAccessManager::finished, this, [=] { page()->setHtml(partIndex.data(Imap::Mailbox::RolePartData).toString()); } );
+                   QFont font(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+        //setStaticWidth(QFontMetrics(font).maxWidth()*90);
+        //addCustomStylesheet(QStringLiteral("pre{word-wrap:normal !important;white-space:pre !important;}"));
+        QWebEngineSettings *s = settings();
+        s->setFontFamily(QWebEngineSettings::StandardFont, font.family());
+
     }
-    load(url);
+    manager->get(*(new QNetworkRequest(url)));
 
     m_savePart = new QAction(UiUtils::loadIcon(QStringLiteral("document-save")), tr("Save this message part..."), this);
     connect(m_savePart, &QAction::triggered, this, &SimplePartWidget::slotDownloadPart);
@@ -94,9 +101,9 @@ SimplePartWidget::SimplePartWidget(QWidget *parent, Imap::Network::MsgPartNetAcc
         connect(this, &SimplePartWidget::searchDialogRequested, m_messageView, &MessageView::triggerSearchDialog);
         // The targets expect the sender() of the signal to be a SimplePartWidget, not a QWebPage,
         // which means we have to do this indirection
-        connect(page(), &QWebPage::linkHovered, this, &SimplePartWidget::linkHovered);
+        connect(page(), &QWebEnginePage::linkHovered, this, &SimplePartWidget::linkHovered);
         connect(this, &SimplePartWidget::linkHovered, m_messageView, &MessageView::partLinkHovered);
-        connect(page(), &QWebPage::downloadRequested, this, &SimplePartWidget::slotDownloadImage);
+        //connect(page(), &QWebEnginePage::downloadRequested, this, &SimplePartWidget::slotDownloadImage);
 
         installEventFilter(m_messageView);
     }
@@ -105,7 +112,7 @@ SimplePartWidget::SimplePartWidget(QWidget *parent, Imap::Network::MsgPartNetAcc
 void SimplePartWidget::slotMarkupPlainText()
 {
     // NOTICE "single shot", we get a recursion otherwise!
-    disconnect(this, &QWebView::loadFinished, this, &SimplePartWidget::slotMarkupPlainText);
+    disconnect(this, &QWebEngineView::loadFinished, this, &SimplePartWidget::slotMarkupPlainText);
 
     // If there's no data, don't try to "fix it up"
     if (!m_partIndex.isValid() || !m_partIndex.data(Imap::Mailbox::RoleIsFetched).toBool())
@@ -114,7 +121,7 @@ void SimplePartWidget::slotMarkupPlainText()
     QPalette palette = QApplication::palette();
 
     // and finally set the marked up page.
-    page()->mainFrame()->setHtml(UiUtils::htmlizedTextPart(m_partIndex, QFontDatabase::systemFont(QFontDatabase::FixedFont),
+    page()->setHtml(UiUtils::htmlizedTextPart(m_partIndex, QFontDatabase::systemFont(QFontDatabase::FixedFont),
                                                            palette.base().color(), palette.text().color(),
                                                            palette.link().color(), palette.linkVisited().color()));
 }
@@ -130,8 +137,12 @@ void SimplePartWidget::slotFileNameRequested(QString *fileName)
 QString SimplePartWidget::quoteMe() const
 {
     QString selection = selectedText();
-    if (selection.isEmpty())
-        return page()->mainFrame()->toPlainText();
+    if (selection.isEmpty()) {
+        page()->toPlainText([&selection](QString sel) {
+            selection=sel;}
+        );
+        return selection;
+    }
     else
         return selection;
 }
@@ -146,58 +157,58 @@ const auto zoomConstant = 1.1;
 void SimplePartWidget::zoomIn()
 {
     setZoomFactor(zoomFactor() * zoomConstant);
-    constrainSize();
+    //constrainSize();
 }
 
 void SimplePartWidget::zoomOut()
 {
     setZoomFactor(zoomFactor() / zoomConstant);
-    constrainSize();
+    //constrainSize();
 }
 
 void SimplePartWidget::zoomOriginal()
 {
     setZoomFactor(1);
-    constrainSize();
+    //constrainSize();
 }
 
 void SimplePartWidget::buildContextMenu(const QPoint &point, QMenu &menu) const
 {
     menu.addAction(m_findAction);
-    auto a = pageAction(QWebPage::Copy);
+    auto a = pageAction(QWebEnginePage::Copy);
     a->setIcon(UiUtils::loadIcon(QStringLiteral("edit-copy")));
     menu.addAction(a);
-    a = pageAction(QWebPage::SelectAll);
+    a = pageAction(QWebEnginePage::SelectAll);
     a->setIcon(UiUtils::loadIcon(QStringLiteral("edit-select-all")));
     menu.addAction(a);
-    if (!page()->mainFrame()->hitTestContent(point).linkUrl().isEmpty()) {
+    /*if (!page()->hitTestContent(point).linkUrl().isEmpty()) {
         menu.addSeparator();
-        a = pageAction(QWebPage::CopyLinkToClipboard);
+        a = pageAction(QWebEnginePage::CopyLinkToClipboard);
         a->setIcon(UiUtils::loadIcon(QStringLiteral("edit-copy")));
         menu.addAction(a);
-    }
+    }*/
     menu.addSeparator();
     menu.addAction(m_savePart);
     menu.addAction(m_saveMessage);
-    if (!page()->mainFrame()->hitTestContent(point).imageUrl().isEmpty()) {
-        a = pageAction(QWebPage::DownloadImageToDisk);
+    /*if (!page()->hitTestContent(point).imageUrl().isEmpty()) {
+        a = pageAction(QWebEnginePage::DownloadImageToDisk);
         a->setIcon(UiUtils::loadIcon(QStringLiteral("download")));
         menu.addAction(a);
-    }
+    }*/
     menu.addSeparator();
     QMenu *colorSchemeMenu = menu.addMenu(UiUtils::loadIcon(QStringLiteral("colorneg")), tr("Color scheme"));
     QActionGroup *ag = new QActionGroup(colorSchemeMenu);
-    for (auto item: supportedColorSchemes()) {
+    /*for (auto item: supportedColorSchemes()) {
         QAction *a = colorSchemeMenu->addAction(item.second);
         connect(a, &QAction::triggered, this, [this, item](){
-           const_cast<SimplePartWidget*>(this)->setColorScheme(item.first);
+      //     const_cast<SimplePartWidget*>(this)->setColorScheme(item.first);
         });
         a->setCheckable(true);
         if (item.first == m_colorScheme) {
             a->setChecked(true);
         }
         a->setActionGroup(ag);
-    }
+    }*/
 
     auto zoomMenu = menu.addMenu(UiUtils::loadIcon(QStringLiteral("zoom")), tr("Zoom"));
     if (m_messageView) {

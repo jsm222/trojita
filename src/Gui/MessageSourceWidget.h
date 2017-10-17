@@ -28,7 +28,7 @@
 #include "Gui/FindBarMixin.h"
 
 class QModelIndex;
-class QWebView;
+class QWebEngineView;
 
 namespace Imap
 {
@@ -56,7 +56,7 @@ private slots:
 private:
     Imap::Mailbox::FullMessageCombiner *m_combiner;
     Spinner *m_loadingSpinner;
-    QWebView *m_widget;
+    QWebEngineView *m_widget;
 };
 
 }

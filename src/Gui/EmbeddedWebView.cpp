@@ -37,9 +37,9 @@
 #include <QTimer>
 #include <QWebFrame>
 #include <QWebHistory>
-
 #include <QDebug>
-
+using namespace Imap::Network;
+using namespace Gui;
 namespace {
 
 /** @short RAII pattern for counter manipulation */
@@ -58,22 +58,65 @@ public:
 };
 
 }
+MyMuaPage::MyMuaPage(QWidget *parent)
+    : QWebEnginePage(parent)
+{
+
+
+}
+bool MyMuaPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame) {
+
+
+    if(url.scheme() == QStringLiteral("trojita-imap")) {
+        return false;
+    } else if(url.scheme() == QStringLiteral("http")) {
+        QDesktopServices::openUrl(url);
+        return false;
+    }
+    else if(url.scheme() == QStringLiteral("https")) {
+        QDesktopServices::openUrl(url);
+        return false;
+    }
+    return true;
+}
 
 namespace Gui
 {
-
-EmbeddedWebView::EmbeddedWebView(QWidget *parent, QNetworkAccessManager *networkManager)
-    : QWebView(parent)
-    , m_scrollParent(nullptr)
+EmbeddedWebView::EmbeddedWebView(QWidget *parent)
+    : QWebEngineView(parent)
+    /*, m_scrollParent(nullptr)
     , m_resizeInProgress(0)
     , m_staticWidth(0)
     , m_colorScheme(ColorScheme::System)
+        */
 {
     // set to expanding, ie. "freely" - this is important so the widget will attempt to shrink below the sizehint!
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setFocusPolicy(Qt::StrongFocus); // not by the wheel
-    setPage(new ErrorCheckingPage(this));
-    page()->setNetworkAccessManager(networkManager);
+
+    setMinimumSize(1920,1080);
+    setPage(new MyMuaPage(this));
+    std::string tiScheme = "trojita-imap";
+
+
+
+
+
+    //    std::cout <<  res->readAll().toStdString();
+
+
+      //  return false;
+
+    //QDesktopServices::openUrl(url);
+    // page()->setNetworkAccessManager(networkManager);
+}
+void EmbeddedWebView::setManager(MsgPartNetAccessManager *netAccess) {
+    m_netAccess = netAccess;
+
+}
+
+/*
+
 
     QWebSettings *s = settings();
     s->setAttribute(QWebSettings::JavascriptEnabled, false);
@@ -88,7 +131,7 @@ EmbeddedWebView::EmbeddedWebView(QWidget *parent, QNetworkAccessManager *network
 
     page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
     connect(this, &QWebView::linkClicked, this, &EmbeddedWebView::slotLinkClicked);
-    connect(this, &QWebView::loadFinished, this, &EmbeddedWebView::handlePageLoadFinished);
+
     connect(page()->mainFrame(), &QWebFrame::contentsSizeChanged, this, &EmbeddedWebView::handlePageLoadFinished);
 
     // Scrolling is implemented on upper layers
@@ -112,9 +155,9 @@ EmbeddedWebView::EmbeddedWebView(QWidget *parent, QNetworkAccessManager *network
     setContextMenuPolicy(Qt::NoContextMenu);
     findScrollParent();
 
-    addCustomStylesheet(QString());
-}
-
+    addCustomStylesheet(QString());*/
+//}
+/*
 void EmbeddedWebView::constrainSize()
 {
     Incrementor dummy(&m_resizeInProgress);
@@ -143,6 +186,7 @@ void EmbeddedWebView::constrainSize()
     }
     // now the page has an idea about it's demanded size
     const QSize bestSize = page()->mainFrame()->contentsSize();
+        fprinf(stderr,"%d",bestSize.width);
     // set the viewport to that size! - Otherwise it'd still be our "suggestion"
     page()->setViewportSize(bestSize);
     // fix the widgets size so the layout doesn't have much choice
@@ -164,19 +208,31 @@ void EmbeddedWebView::slotLinkClicked(const QUrl &url)
         QDesktopServices::openUrl(betterUrl);
     }
 }
-
+*/
+MsgPartNetAccessManager* EmbeddedWebView::getManager()  {
+    return m_netAccess;
+}
 void EmbeddedWebView::handlePageLoadFinished()
 {
-    constrainSize();
 
+    //constrainSize();
     // We've already set in in our constructor, but apparently it isn't enough (Qt 4.8.0 on X11).
     // Let's do it again here, it works.
-    Qt::ScrollBarPolicy policy = isWindow() ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff;
-    page()->mainFrame()->setScrollBarPolicy(Qt::Horizontal, policy);
-    page()->mainFrame()->setScrollBarPolicy(Qt::Vertical, policy);
-    page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
+//    Qt::ScrollBarPolicy policy = isWindow() ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff;
+    //page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
 }
+void EmbeddedWebView::handleReplyFinished(QNetworkReply *reply)
+{
 
+
+
+    //constrainSize();
+    // We've already set in in our constructor, but apparently it isn't enough (Qt 4.8.0 on X11).
+    // Let's do it again here, it works.
+//    Qt::ScrollBarPolicy policy = isWindow() ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff;
+    //page()->setLifalsenkDelegationPolicy(QWebPage::DelegateAllLinks);
+}
+/*
 void EmbeddedWebView::changeEvent(QEvent *e)
 {
     QWebView::changeEvent(e);
@@ -394,6 +450,9 @@ void EmbeddedWebView::addCustomStylesheet(const QString &css)
     const QString urlPrefix(QStringLiteral("data:text/css;charset=utf-8;base64,"));
     const QString myColors(QStringLiteral("body { background-color: %1; color: %2; }\n").arg(bgName, fgName));
     s->setUserStyleSheetUrl(QString::fromUtf8(urlPrefix.toUtf8() + (myColors + m_customCss).toUtf8().toBase64()));
-}
+}*/
+
+
+
 
 }

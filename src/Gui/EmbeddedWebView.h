@@ -21,10 +21,17 @@
 */
 #ifndef EMBEDDEDWEBVIEW_H
 #define EMBEDDEDWEBVIEW_H
-
+#include "../Imap/Network/MsgPartNetworkReply.h"
+#include "../Imap/Network/MsgPartNetAccessManager.h"
 #include <QWebPluginFactory>
-#include <QWebView>
-
+#include <QtWebKitWidgets/QtWebKitWidgets>
+#include <QtWebEngineWidgets/QWebEngineView>
+class MyMuaPage:public QWebEnginePage {
+    Q_OBJECT
+public:
+    MyMuaPage(QWidget *parent=nullptr);
+    bool acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame);
+};
 namespace Gui
 {
 
@@ -43,7 +50,9 @@ namespace Gui
   @see Gui::MessageView
 
   */
-class EmbeddedWebView: public QWebView
+
+
+class EmbeddedWebView: public QWebEngineView
 {
     Q_OBJECT
 public:
@@ -56,14 +65,17 @@ public:
         BlackOnWhite,
     };
 
-    EmbeddedWebView(QWidget *parent, QNetworkAccessManager *networkManager);
-    QSize sizeHint() const;
+    EmbeddedWebView(QWidget *parent);
+   /* QSize sizeHint() const;
     QWidget *scrollParent() const;
     void setStaticWidth(int staticWidth);
     int staticWidth() const;
-    std::map<ColorScheme, QString> supportedColorSchemes() const;
-public slots:
-    void setColorScheme(const ColorScheme colorScheme);
+    std::map<ColorScheme, QString> supportedColorSchemes() const;*/
+    Imap::Network::MsgPartNetAccessManager* getManager();
+    void setManager(Imap::Network::MsgPartNetAccessManager *netAccess);
+//public slots:
+//    void setColorScheme(const ColorScheme colorScheme);
+/*
 protected:
     void changeEvent(QEvent *e);
     bool eventFilter(QObject *o, QEvent *e);
@@ -71,13 +83,16 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e);
     void showEvent(QShowEvent *se);
     void addCustomStylesheet(const QString &css);
-    void constrainSize();
+    void constrainSize();*/
 private:
-    void findScrollParent();
+    //void findScrollParent();
+    Imap::Network::MsgPartNetAccessManager *m_netAccess;
 private slots:
-    void autoScroll();
-    void slotLinkClicked(const QUrl &url);
+  //  void autoScroll();
+    //void slotLinkClicked(const QUrl &url);
+    void handleReplyFinished(QNetworkReply *reply);
     void handlePageLoadFinished();
+/*
 private:
     QWidget *m_scrollParent;
     int m_scrollParentPadding;
@@ -100,7 +115,9 @@ public:
     virtual bool extension(Extension extension, const ExtensionOption *option, ExtensionReturn *output);
     virtual bool supportsExtension(Extension extension) const;
 };
+*/
 
+};
 }
-
 #endif // EMBEDDEDWEBVIEW_H
+

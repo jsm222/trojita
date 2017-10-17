@@ -24,7 +24,7 @@
 
 #include <QWidget>
 
-class QWebView;
+class QWebEngineView;
 
 namespace Gui {
 
@@ -37,7 +37,7 @@ public:
     FindBarMixin(QWidget *parent);
 
 protected:
-    void searchRequestedBy(QWebView *webView);
+    void searchRequestedBy(QWebEngineView *webView);
 
     FindBar *m_findBar;
 };

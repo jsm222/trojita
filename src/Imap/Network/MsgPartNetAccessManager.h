@@ -45,15 +45,16 @@ public:
     QString translateToSupportedMimeType(const QString &originalMimeType) const;
     void registerMimeTypeTranslation(const QString &originalMimeType, const QString &translatedMimeType);
     Q_INVOKABLE void wrapQmlWebViewRequest(QObject *request, QObject *reply);
+    QPersistentModelIndex message;
 protected:
     virtual QNetworkReply *createRequest(Operation op, const QNetworkRequest &req, QIODevice *outgoingData=0);
 signals:
     void requestingExternal(const QUrl &url);
 public slots:
     void setExternalsEnabled(bool enabled);
-private:
-    QPersistentModelIndex message;
 
+
+private:
     bool externalsEnabled;
     QMap<QString, QString> m_mimeTypeFixups;
 

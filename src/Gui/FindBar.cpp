@@ -203,17 +203,17 @@ void FindBar::find(FindBar::FindDirection dir)
     Q_ASSERT(m_associatedWebView);
 
     if (isHidden()) {
-        QPoint previous_position = m_associatedWebView->page()->currentFrame()->scrollPosition();
-        m_associatedWebView->page()->focusNextPrevChild(true);
-        m_associatedWebView->page()->currentFrame()->setScrollPosition(previous_position);
+       // QPoint previous_position = m_associatedWebView->page()->currentFrame()->scrollPosition();
+       // m_associatedWebView->page()->focusNextPrevChild(true);
+        //m_associatedWebView->page()->currentFrame()->setScrollPosition(previous_position);
         return;
     }
 
-    QWebPage::FindFlags options = QWebPage::FindWrapsAroundDocument;
+    QWebEnginePage::FindFlags options = QWebEnginePage::FindBackward;
     if (dir == Backward)
-        options |= QWebPage::FindBackward;
+        options |= QWebEnginePage::FindBackward;
     if (matchCase())
-        options |= QWebPage::FindCaseSensitively;
+        options |= QWebEnginePage::FindCaseSensitively;
 
     // HACK Because we're using the QWebView inside a QScrollArea container, the attempts
     // to scroll the QWebView itself have no direct effect.
@@ -224,48 +224,50 @@ void FindBar::find(FindBar::FindDirection dir)
 
     auto emb = qobject_cast<EmbeddedWebView *>(m_associatedWebView);
 
-    QAbstractScrollArea *container = emb ? static_cast<QAbstractScrollArea*>(emb->scrollParent()) : nullptr;
-    const QSize oldVpS = m_associatedWebView->page()->viewportSize();
+    QAbstractScrollArea *container = nullptr;
+   // const QSize oldVpS = m_associatedWebView->page()->viewportSize();
     const bool useResizeTrick = container ? !!container->verticalScrollBar() : false;
     // first shrink the page viewport
     if (useResizeTrick) {
         m_associatedWebView->setUpdatesEnabled(false); // don't let the user see the flicker we might produce
-        QSize newVpS = oldVpS.boundedTo(container->size());
-        m_associatedWebView->page()->setViewportSize(newVpS);
+        //QSize newVpS = oldVpS.boundedTo(container->size());
+        //m_associatedWebView->page()->setViewportSize(newVpS);
     }
 
     // now perform the search (pot. in the shrinked viewport)
-    bool found = m_associatedWebView->page()->findText(_lastStringSearched, options);
-    notifyMatch(found);
+    m_associatedWebView->page()->findText(_lastStringSearched, options);
+    notifyMatch(true);
 
     // scroll and reset the page viewport if necessary
     if (useResizeTrick) {
         Q_ASSERT(container->verticalScrollBar());
         // the page has now a usable scroll position ...
-        int scrollPosition = m_associatedWebView->page()->currentFrame()->scrollPosition().y();
+        //int scrollPosition = m_associatedWebView->page()->currentFrame()->scrollPosition().y();
         // ... which needs to be extended by the pages offset (usually the header widget)
         // NOTICE: QWidget::mapTo() fails as the viewport child position can be negative, so we run ourself
         QWidget *runner = m_associatedWebView;
-        while (runner->parentWidget() != container->viewport()) {
+        /*while (runner->parentWidget() != container->viewport()) {
             scrollPosition += runner->y();
             runner = runner->parentWidget();
-        }
+        }*/
         // reset viewport to original size ...
-        m_associatedWebView->page()->setViewportSize(oldVpS);
+       // m_associatedWebView->page()->setViewportSize(oldVpS);
         // ... let the user see the change ...
         m_associatedWebView->setUpdatesEnabled(true);
 
         // ... and finally scroll to the desired position
-        if (found)
-            container->verticalScrollBar()->setValue(scrollPosition);
-    }
+     //   if (found)
+        //    container->verticalScrollBar()->setValue(scrollPosition);
+    //}
 
-    if (!found) {
+    /*if (!found) {
         QPoint previous_position = m_associatedWebView->page()->currentFrame()->scrollPosition();
         m_associatedWebView->page()->focusNextPrevChild(true);
         m_associatedWebView->page()->currentFrame()->setScrollPosition(previous_position);
+        */
     }
 }
+
 
 void FindBar::findNext()
 {
@@ -282,7 +284,7 @@ void FindBar::matchCaseUpdate()
 {
     Q_ASSERT(m_associatedWebView);
 
-    m_associatedWebView->page()->findText(_lastStringSearched, QWebPage::FindBackward);
+    m_associatedWebView->page()->findText(_lastStringSearched, QWebEnginePage::FindBackward);
     findNext();
     updateHighlight();
 }
@@ -292,19 +294,20 @@ void FindBar::updateHighlight()
 {
     Q_ASSERT(m_associatedWebView);
 
-    QWebPage::FindFlags options = QWebPage::HighlightAllOccurrences;
 
-    m_associatedWebView->page()->findText(QString(), options); //Clear an existing highlight
+
+    m_associatedWebView->page()->findText(QString(), QWebEnginePage::FindCaseSensitively); //Clear an existing highlight
 
     if (!isHidden() && highlightAllState())
     {
+        QWebEnginePage::FindFlags options;
         if (matchCase())
-            options |= QWebPage::FindCaseSensitively;
+            options  |= QWebEnginePage::FindCaseSensitively;
         m_associatedWebView->page()->findText(_lastStringSearched, options);
     }
 }
 
-void FindBar::setAssociatedWebView(QWebView *webView)
+void FindBar::setAssociatedWebView(QWebEngineView *webView)
 {
     if (m_associatedWebView)
         disconnect(m_associatedWebView, nullptr, this, nullptr);
@@ -314,7 +317,7 @@ void FindBar::setAssociatedWebView(QWebView *webView)
     if (m_associatedWebView) {
         // highlighting is fancy, but terribly expensive - disable by default for fat messages
         if (auto emb = qobject_cast<EmbeddedWebView*>(m_associatedWebView)) {
-            m_highlightAll->setChecked(!emb->staticWidth());
+         //   m_highlightAll->setChecked(!emb->staticWidth());
         }
         // Automatically hide this FindBar widget when the underlying webview goes away
         connect(m_associatedWebView.data(), &QObject::destroyed,

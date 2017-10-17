@@ -30,7 +30,7 @@ FindBarMixin::FindBarMixin(QWidget *parent)
 {
 }
 
-void FindBarMixin::searchRequestedBy(QWebView *webView)
+void FindBarMixin::searchRequestedBy(QWebEngineView *webView)
 {
     if (m_findBar->isVisible() || !webView) {
         // NOTICE: hide must go before resetting the AssociatedWebView

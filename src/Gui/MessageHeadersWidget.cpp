@@ -31,12 +31,13 @@
 #include "Imap/Network/MsgPartNetAccessManager.h"
 #include "UiUtils/IconLoader.h"
 
+
 namespace Gui {
 
 MessageHeadersWidget::MessageHeadersWidget(QWidget *parent, const QModelIndex &messageIndex)
     : QWidget(parent)
     , FindBarMixin(this)
-    , m_widget(new QWebView(this))
+    , m_widget(new EmbeddedWebView(this))
 
 {
     setWindowIcon(UiUtils::loadIcon(QStringLiteral("text-x-hex")));
@@ -49,7 +50,7 @@ MessageHeadersWidget::MessageHeadersWidget(QWidget *parent, const QModelIndex &m
 
     auto netAccess = new Imap::Network::MsgPartNetAccessManager(this);
     netAccess->setModelMessage(messageIndex);
-    m_widget->page()->setNetworkAccessManager(netAccess);
+
     m_widget->setUrl(QUrl(QStringLiteral("trojita-imap://msg/HEADER")));
 
     auto find = new QAction(UiUtils::loadIcon(QStringLiteral("edit-find")), tr("Search..."), this);
